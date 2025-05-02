@@ -1,2 +1,2 @@
-# 42Core_Libft
-First Project of 42Core Curriculum
+# 42Core_Libft - M00
+In this project focus on Implementation of String Manipulation Functions & Linked List in C language
