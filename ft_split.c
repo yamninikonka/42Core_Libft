@@ -12,96 +12,129 @@
 
 #include "libft.h"
 
-static void	ft_initialization(size_t *i, int *k, int *begin)
+static size_t	get_c_count(char const *s, char c)
 {
-	*i = 0;
-	*k = 0;
-	*begin = -1;
-}
+	size_t	count;
+	int		ind;
 
-static void	*ft_free(char **s, int count)
-{
-	int	i;
-
-	i = 0;
-	while (i < count)
-	{
-		free(s[i]);
-		i++;
-	}
-	free(s);
-	return (NULL);
-}
-
-static int	ft_countwords(const char *s, char c)
-{
-	int	i;
-	int	count;
-	int	flag;
-
-	i = 0;
 	count = 0;
-	flag = 0;
-	while (s[i])
+	ind = 0;
+	while (s[ind])
 	{
-		if (((s[i] != c) && flag == 0))
-		{
+		if (s[ind] == c & s[ind - 1] != s[ind])
 			count++;
-			flag = 1;
-		}
-		else if (s[i] == c)
-			flag = 0;
-		i++;
+		ind++;
 	}
 	return (count);
 }
 
-static char	*ft_divide_words(const char *s, int start, int end)
+static char	*clean_and_remove_duplicates(char const *s, char c)
 {
-	int		i;
-	char	*sub_array;
+	char	*cleaned_s;
+	char	*cleaned_s_temp;
+	char	*trimmed_s;
+	int		ind;
 
-	i = 0;
-	sub_array = (char *)malloc((end - start + 1) * sizeof(char));
-	if (!sub_array)
+	trimmed_s = ft_strtrim(s, &c);
+	ind = 0;
+	if (!trimmed_s)
 	{
 		return (NULL);
 	}
-	while (start < end)
+	if (trimmed_s[ind] == '\0')
 	{
-		sub_array[i] = s[start];
-		i++;
-		start++;
+		free(trimmed_s);
+		return (NULL);
 	}
-	sub_array[i] = 0;
-	return (sub_array);
+	cleaned_s = malloc(sizeof(char) * (ft_strlen(trimmed_s) + 1));
+	if (!cleaned_s)
+	{
+		free(trimmed_s);
+		return (NULL);
+	}
+	cleaned_s_temp = cleaned_s;
+	*cleaned_s++ = trimmed_s[ind++];
+	while (trimmed_s[ind])
+	{
+		if (trimmed_s[ind - 1] == c && trimmed_s[ind] == c)
+		{
+			ind++;
+			continue ;
+		}
+		*cleaned_s++ = trimmed_s[ind++];
+	}
+	*cleaned_s = '\0';
+	return (cleaned_s_temp);
 }
 
+void	*free_str_arr(char **str_arr)
+{
+	while (*str_arr != NULL)
+	{
+		free(*str_arr);
+		*str_arr = NULL;
+		str_arr++;
+	}
+	// free(str_arr);
+	return (NULL);
+}
+
+char	**main_logic(char **str_arr, char *prev_str, char *curr_str, char c,
+		int count)
+{
+	char	**temp;
+
+	temp = str_arr;
+	if (str_arr == NULL)
+		return (NULL);
+	while (curr_str != NULL)
+	{
+		*str_arr = ft_substr(prev_str, 0, (ft_strlen(prev_str)
+					- ft_strlen(curr_str)));
+		if (*str_arr == NULL)
+		{
+			return (free_str_arr(str_arr));
+		}
+		curr_str++;
+		prev_str = curr_str;
+		str_arr++;
+		count--;
+		curr_str = ft_strchr(prev_str, c);
+	}
+	*str_arr = ft_substr(prev_str, 0, ft_strlen(prev_str));
+	str_arr++;
+	*str_arr = NULL;
+	return (temp);
+}
 char	**ft_split(char const *s, char c)
 {
-	char	**array;
-	size_t	i;
-	int		k;
-	int		begin;
+	char	**str_arr;
+	char	*prev_str;
+	char	*curr_str;
+	char	*cleaned_s;
+	int		count;
+	char	**result;
 
-	ft_initialization(&i, &k, &begin);
-	array = (char **)malloc((ft_countwords(s, c) + 1) * sizeof(char *));
-	if (!array)
-		return (NULL);
-	while (i <= ft_strlen(s))
+	cleaned_s = clean_and_remove_duplicates(s, c);
+	if (cleaned_s != NULL)
 	{
-		if (s[i] != c && begin < 0)
-			begin = i;
-		else if ((s[i] == c || i == ft_strlen(s)) && begin >= 0)
+		prev_str = cleaned_s;
+		curr_str = ft_strchr(cleaned_s, c);
+		count = get_c_count(cleaned_s, c) + 2;
+		str_arr = (char **)malloc(sizeof(char *) * count);
+		result = main_logic(str_arr, prev_str, curr_str, c, count);
+		if (result == NULL)
 		{
-			array[k] = ft_divide_words(s, begin, i);
-			if (!array[k])
-				return (ft_free(array, k));
-			begin = -1;
-			k++;
+			free(cleaned_s);
+			free(str_arr);
+			return (NULL);
 		}
-		i++;
+		free(cleaned_s);
 	}
-	array[k] = 0;
-	return (array);
+	else
+	{
+		str_arr = (char **)malloc(sizeof(char *) * 1);
+		*str_arr = NULL;
+	}
+	return (str_arr);
 }
